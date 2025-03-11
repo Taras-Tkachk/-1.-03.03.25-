@@ -1,15 +1,13 @@
 import java.io.*;
+import java.util.*;
 
 class ComputationData implements Serializable {
     private static final long serialVersionUID = 1L;
-
     private double input;
     private double result;
-    private transient String tempData;
 
     public ComputationData(double input) {
         this.input = input;
-        this.tempData = "Тимчасові дані";
     }
 
     public double getInput() {
@@ -23,83 +21,84 @@ class ComputationData implements Serializable {
     public void setResult(double result) {
         this.result = result;
     }
-
-    public String getTempData() {
-        return tempData;
-    }
 }
 
 class Solver {
-    private ComputationData data;
+    private List<ComputationData> computations = new ArrayList<>();
 
-    public Solver(ComputationData data) {
-        this.data = data;
+    public void compute(double value) {
+        ComputationData data = new ComputationData(value);
+        data.setResult(Math.sqrt(value));
+        computations.add(data);
     }
 
-    public void compute() {
-        double result = Math.sqrt(data.getInput());
-        data.setResult(result);
+    public List<ComputationData> getComputations() {
+        return computations;
+    }
+}
+
+interface Displayable {
+    void display(List<ComputationData> computations);
+}
+
+class TextDisplay implements Displayable {
+    @Override
+    public void display(List<ComputationData> computations) {
+        for (ComputationData data : computations) {
+            System.out.println("Вхідне значення: " + data.getInput() + ", Результат: " + data.getResult());
+        }
+    }
+}
+
+abstract class DisplayFactory {
+    public abstract Displayable createDisplay();
+}
+
+class TextDisplayFactory extends DisplayFactory {
+    @Override
+    public Displayable createDisplay() {
+        return new TextDisplay();
     }
 }
 
 class Demo {
-    public static void serializeData(ComputationData data, String filename) {
+    public static void serializeData(List<ComputationData> computations, String filename) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
-            oos.writeObject(data);
+            oos.writeObject(computations);
             System.out.println("Дані збережені.");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static ComputationData deserializeData(String filename) {
+    public static List<ComputationData> deserializeData(String filename) {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
-            return (ComputationData) ois.readObject();
+            return (List<ComputationData>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
-            return null;
+            return new ArrayList<>();
         }
     }
 }
 
-class ComputationTest {
+public class ComputationTest {
     public static void main(String[] args) {
-        ComputationData data = new ComputationData(25);
-        Solver solver = new Solver(data);
-        solver.compute();
+        Solver solver = new Solver();
+        solver.compute(25);
+        solver.compute(16);
+        solver.compute(9);
 
-        System.out.println("Результат: " + data.getResult());
+        DisplayFactory factory = new TextDisplayFactory();
+        Displayable display = factory.createDisplay();
+        
+        System.out.println("Результати обчислень:");
+        display.display(solver.getComputations());
 
-        String filename = "computation.ser";
-        Demo.serializeData(data, filename);
+        String filename = "computations.ser";
+        Demo.serializeData(solver.getComputations(), filename);
 
-        ComputationData restoredData = Demo.deserializeData(filename);
-        if (restoredData != null) {
-            System.out.println("Відновлений результат: " + restoredData.getResult());
-            System.out.println("Тимчасові дані (transient): " + restoredData.getTempData());
-        }
-
-        double number = 12.75;
-        System.out.println("Двійкове представлення числа " + number + ": " + toBinaryString(number));
-    }
-
-    public static String toBinaryString(double number) {
-        long intPart = (long) number;
-        double fracPart = number - intPart;
-
-        String intBinary = Long.toBinaryString(intPart);
-        StringBuilder fracBinary = new StringBuilder();
-
-        while (fracPart > 0 && fracBinary.length() < 10) {
-            fracPart *= 2;
-            if (fracPart >= 1) {
-                fracBinary.append("1");
-                fracPart -= 1;
-            } else {
-                fracBinary.append("0");
-            }
-        }
-
-        return intBinary + "." + fracBinary.toString();
+        List<ComputationData> restoredComputations = Demo.deserializeData(filename);
+        System.out.println("\nВідновлені результати:");
+        display.display(restoredComputations);
     }
 }
