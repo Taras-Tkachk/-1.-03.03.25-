@@ -15,8 +15,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Compile and Run Java Program
-        run: |
-          javac CommandLineArgs.java
-          java CommandLineArgs "GitHub" "Automation" "Test"
-        
+      - name: Compile Java files
+        run: javac *.java
+
+      - name: Run Java Program
+        run: java CommandLineArgs "GitHub" "Automation" "Test"
