@@ -1,0 +1,22 @@
+name: Run Java Program
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Compile and Run Java Program
+        run: |
+          javac CommandLineArgs.java
+          java CommandLineArgs "GitHub" "Automation" "Test"
+        
